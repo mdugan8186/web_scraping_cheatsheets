@@ -8,16 +8,20 @@
 # Covers searching by tag, class, ID, text, attributes, CSS selectors, and DOM navigation.
 # ==========================
 
-# region == Installation ==
+# --------------------------
+# Installation
+# --------------------------
+
 """
 pip install beautifulsoup4
 """
-# endregion
 
-# region == Basic Usage ==
+# --------------------------
+# Basic Usage
+# --------------------------
+
 import requests
-from bs4 import NavigableString
-from bs4 import BeautifulSoup
+from bs4 import BeautifulSoup, NavigableString
 
 html = """
 <html>
@@ -31,102 +35,121 @@ html = """
 """
 
 soup = BeautifulSoup(html, "html.parser")
-# endregion
 
-# region == Finding Elements ==
+# --------------------------
+# Finding Elements
+# --------------------------
+
 # Single element
-title = soup.find("title")                 # <title>Test Page</title>
-h1 = soup.find("h1")                       # <h1 class="title">Hello World</h1>
-p_by_id = soup.find(id="first")           # <p id="first">...</p>
+title = soup.find("title")
+h1 = soup.find("h1")
+p_by_id = soup.find(id="first")
 
 # Multiple elements
-all_paragraphs = soup.find_all("p")       # list of <p> tags
+all_paragraphs = soup.find_all("p")
 desc_paragraph = soup.find("p", class_="description")
 
 # CSS Selectors
-soup.select("p")                          # all <p> tags
-soup.select("p.description")              # <p class="description">
-soup.select("#first")                     # element with id="first"
-soup.select("h1.title")                   # <h1 class="title">
-# endregion
+soup.select("p")                 # All <p> tags
+soup.select("p.description")     # Class selector
+soup.select("#first")            # ID selector
+soup.select("h1.title")          # Tag + class
 
-# region == Getting Text and Attributes ==
-text = h1.get_text()                      # 'Hello World'
+# --------------------------
+# Getting Text and Attributes
+# --------------------------
+
+text = h1.get_text()                  # 'Hello World'
 link = soup.find("a")
-link_text = link.text                     # 'link'
-link_url = link["href"]                   # 'https://example.com'
+link_text = link.text                 # 'link'
+link_url = link["href"]              # 'https://example.com'
+link_url_safe = link.get("href", "N/A")
 
-# Safe attribute access
-link_url_safe = link.get("href", "N/A")   # fallback if missing
-# endregion
+# --------------------------
+# Navigating the DOM
+# --------------------------
 
-# region == Navigating the DOM ==
-h1 = soup.find("h1")
-parent = h1.parent                        # <body>...
-next_element = h1.find_next()             # <p>...
-previous_element = h1.find_previous()     # <head>...
-next_sibling = h1.find_next_sibling()     # <p>...
-previous_sibling = h1.find_previous_sibling()  # None in this case
+parent = h1.parent
+next_element = h1.find_next()
+previous_element = h1.find_previous()
+next_sibling = h1.find_next_sibling()
+previous_sibling = h1.find_previous_sibling()
 
-# Nested tag chaining
-link = soup.body.p.a                      # direct access to <a> inside <p>
-# endregion
+# Direct nested access
+link = soup.body.p.a
 
-# region == Searching by Text ==
-soup.find_all(string="Hello World")       # exact match
-soup.find_all(string=lambda t: "Hello" in t)  # substring match
-# endregion
+# --------------------------
+# Searching by Text
+# --------------------------
 
-# region == Working with Attributes ==
-# Find tag with specific attribute
+soup.find_all(string="Hello World")  # Exact match
+soup.find_all(string=lambda t: "Hello" in t)  # Substring match
+
+# --------------------------
+# Working with Attributes
+# --------------------------
+
 soup.find("a", href="https://example.com")
-
-# Find tags with any attribute key-value match
 soup.find_all("p", attrs={"class": "description"})
-# endregion
 
-# region == Cleaning or Stripping Tags ==
+# --------------------------
+# Cleaning or Stripping Tags
+# --------------------------
 
-# Extract raw text only
+# Extract raw text
 clean_text = soup.get_text(separator=" ", strip=True)
 
-# Remove all <script> and <style> tags
+# Remove <script> and <style> tags
 for tag in soup(["script", "style"]):
     tag.decompose()
-# endregion
 
-# region == Parsing External HTML Pages ==
+# --------------------------
+# Parsing External HTML Pages
+# --------------------------
 
 res = requests.get("https://books.toscrape.com/")
 soup = BeautifulSoup(res.text, "html.parser")
 
 titles = [h3.a["title"] for h3 in soup.select("h3")]
 prices = [p.text for p in soup.select(".price_color")]
-# endregion
 
-# region == Tips and Best Practices ==
-"""
-✅ Use `.select()` when CSS selectors are more readable
-✅ Use `.find_all()` for structured iteration
-✅ Use `.get_text(strip=True)` to extract clean text
-✅ Combine with DevTools for tag/class inspection
-✅ Use `.get()` for safe attribute access (avoids KeyError)
+# --------------------------
+# Tips and Best Practices
+# --------------------------
 
-⚠️ Avoid `.contents` or raw `.children` unless you're deeply navigating the DOM
-⚠️ Don't parse JavaScript-generated content with bs4 — use Selenium or API calls
 """
-# endregion
+✅ Use .select() when CSS selectors are easier to express
+✅ Use .find_all() for structured iteration
+✅ Use .get_text(strip=True) to extract clean text
+✅ Use .get() for safe attribute access
+✅ Inspect elements with browser DevTools to locate tag/class/ID
 
-# region == Limitations ==
+⚠️ Avoid .contents or .children unless necessary
+⚠️ BeautifulSoup does not run JavaScript — use Selenium or DevTools inspection for dynamic sites
 """
-- BeautifulSoup does not execute JavaScript
-- It parses HTML as-is — you need to inspect and handle malformed or complex structures
-- For performance or large-scale scraping, use `lxml` or `selectolax`
-"""
-# endregion
 
-# region == Documentation ==
-# BeautifulSoup 4 Docs: https://www.crummy.com/software/BeautifulSoup/bs4/doc/
-# Tutorial (Real Python): https://realpython.com/beautiful-soup-web-scraper-python/
-# CSS Selectors Reference: https://developer.mozilla.org/en-US/docs/Web/CSS/CSS_Selectors
-# endregion
+# --------------------------
+# Limitations
+# --------------------------
+
+"""
+- Does not render or execute JavaScript
+- Cannot evaluate XPath (use lxml or Scrapy for that)
+- Parsing malformed HTML is possible but sometimes brittle
+- For performance, use selectolax (faster C-based parser)
+"""
+
+# --------------------------
+# Documentation
+# --------------------------
+
+"""
+BeautifulSoup Docs:
+https://www.crummy.com/software/BeautifulSoup/bs4/doc/
+
+Real Python Tutorial:
+https://realpython.com/beautiful-soup-web-scraper-python/
+
+CSS Selector Reference (MDN):
+https://developer.mozilla.org/en-US/docs/Web/CSS/CSS_Selectors
+"""

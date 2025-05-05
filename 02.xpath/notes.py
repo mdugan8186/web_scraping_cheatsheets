@@ -4,72 +4,197 @@
 
 # ==========================
 # == OBJECTIVE ==
-# Cheat sheet for XPath: querying HTML/XML documents using node paths.
-# Used in lxml, Scrapy, and Selenium. Crucial for precise web scraping.
+# Cheat sheet for using XPath to extract data from HTML and XML.
+# Covers syntax, selectors, filtering, and real-world scraping patterns.
 # ==========================
 
-# region == XPath Syntax Basics ==
 """
-//tag              → All <tag> elements
-//div[@class='x']  → <div> with exact class match
-//a/@href          → Extract href values from all <a> tags
-//*[@id='main']   → Any tag with id='main'
-/html/body/div    → Absolute path (not recommended for scraping)
+XPath (XML Path Language) is a query language used to navigate and extract elements
+from XML/HTML documents. It works by traversing the tree structure of the document.
 
-//*                → Wildcard (any element)
+XPath is natively supported in:
+- lxml
+- parsel (used in Scrapy)
+- Selenium
+- Playwright
 """
-# endregion
 
-# region == Attribute and Text Selectors ==
-"""
-//div[@data-id]                  → Has 'data-id' attribute
-//span[text()='Buy Now']        → Exact text match
-//div[contains(text(), 'Price')]→ Partial text match
-//a[starts-with(@href, '/prod')]→ Href starts with /prod
-"""
-# endregion
+# --------------------------
+# XPath Basic Syntax
+# --------------------------
 
-# region == Position and Indexing ==
 """
-(//li)[1]             → First <li> in entire document
-(//div[@class='x'])[3]→ Third <div> with class="x"
-(//tr)[last()]        → Last table row
-//ul/li[position()=2] → Second list item
-"""
-# endregion
+/          - Root node
+//         - Anywhere in the document (recursive search)
+.          - Current node
+..         - Parent node
+@          - Attribute selector
 
-# region == Logical Conditions ==
+Examples:
+- /html/body/h1                 → exact path from root
+- //h1                         → all <h1> tags anywhere
+- //div[@class='product']      → all <div> tags with class="product"
+- //a[@href]                   → all <a> tags that have an href attribute
+- //span/text()                → extract text from all <span> tags
+- //div[@id='main']/h2         → <h2> child of <div id="main">
 """
-//div[@id='a' or @class='b']
-//*[contains(@class, 'card') and contains(@data-type, 'active')]
-"""
-# endregion
 
-# region == Axis Navigation ==
-"""
-//li/parent::ul               → Get <ul> containing <li>
-.//img/ancestor::div         → Closest ancestor <div> of an <img>
-.//a/following-sibling::span → <span> that follows an <a>
-"""
-# endregion
+# --------------------------
+# XPath vs CSS Selectors
+# --------------------------
 
-# region == Use in Libraries ==
 """
-# lxml
+CSS:    div.product > h2
+XPath:  //div[@class='product']/h2
+
+CSS:    a[href^='/product']
+XPath:  //a[starts-with(@href, '/product')]
+
+CSS:    ul > li:nth-child(2)
+XPath:  //ul/li[2]
+
+XPath is more powerful for:
+✅ Matching attribute values by content
+✅ Navigating both directions (up/down)
+✅ Extracting text and attributes
+"""
+
+# --------------------------
+# Text and Attribute Extraction
+# --------------------------
+
+"""
+//h1/text()                      → text of <h1> tags
+//a/@href                       → href attribute of all <a> tags
+//img[@alt]/@src                → src from <img> tags that have an alt
+
+You can also combine:
+- //div[@class='product']/a/@href → href of link inside a product box
+"""
+
+# --------------------------
+# Filtering with Conditions
+# --------------------------
+
+"""
+//div[@class='product']                     → exact match
+//div[contains(@class, 'product')]          → partial match
+//a[starts-with(@href, '/buy')]             → prefix match
+//li[text()='Free Shipping']                → exact text match
+//span[contains(text(), '$')]               → price-like content
+"""
+
+# --------------------------
+# Functions and Operators
+# --------------------------
+
+"""
+position()       → the index of a node (1-based)
+last()           → the last item in a node-set
+contains()       → partial match
+starts-with()    → match prefix
+string-length()  → length of text content
+normalize-space()→ strip surrounding whitespace
+
+Examples:
+- //li[position()=1]            → first list item
+- //li[position()>1]           → all but the first
+- //li[last()]                 → last list item
+"""
+
+# --------------------------
+# Practical Examples
+# --------------------------
+
+"""
+# Get all product titles
+//div[@class='product']/h2/text()
+
+# Get all product prices
+//div[@class='product']/span[@class='price']/text()
+
+# Get all product links
+//div[@class='product']/a/@href
+
+# Find reviews with 5 stars
+//div[@class='review'][.//span[@class='stars' and text()='★★★★★']]
+"""
+
+# --------------------------
+# Using XPath in Python
+# --------------------------
+
 from lxml import html
-tree = html.fromstring(response.content)
-title = tree.xpath("//h1/text()")
+import requests
 
-# Scrapy
-response.xpath("//div[@class='item']/h2/text()").get()
+url = "https://books.toscrape.com"
+r = requests.get(url)
+tree = html.fromstring(r.content)
 
-# Selenium
-element = driver.find_element(By.XPATH, "//button[@id='submit']")
+# Get all book titles from h3 tag titles
+titles = tree.xpath("//h3/a/@title")
+
+# Get all prices
+prices = tree.xpath("//p[@class='price_color']/text()")
+
+# Extract star ratings (as class strings)
+ratings = tree.xpath("//p[contains(@class, 'star-rating')]/@class")
+
+# Extract links to product pages
+links = tree.xpath("//h3/a/@href")
+print(titles[:3], prices[:3], links[:3])
+
+# Note: XPath returns lists. Use [0] to access first result, or loop over results.
+
+# --------------------------
+# Best Practices
+# --------------------------
+
 """
-# endregion
+✅ Use Chrome/Firefox DevTools to inspect tags and copy XPath
+✅ Use `contains(@class, 'name')` instead of exact matches if class names are combined
+✅ Use .text() only at the end to get clean content
+✅ Always test XPath with tools like:
+    - browser console ($x("//h1"))
+    - online tester: https://xpather.com
 
-# region == Documentation ==
-# MDN: https://developer.mozilla.org/en-US/docs/Web/XPath
-# W3Schools XPath: https://www.w3schools.com/xml/xpath_intro.asp
-# Devhints: https://devhints.io/xpath
-# endregion
+⚠️ Avoid over-relying on positional selectors (like div[3]) — they break easily
+⚠️ If elements are generated by JavaScript, XPath alone won't help — use network tools or Selenium
+"""
+
+# --------------------------
+# Documentation
+# --------------------------
+
+"""
+✅ General XPath Syntax and Tutorials
+- MDN XPath Reference:
+  https://developer.mozilla.org/en-US/docs/Web/XPath
+
+- W3Schools XPath Tutorial:
+  https://www.w3schools.com/xml/xpath_intro.asp
+
+✅ Python-Specific Implementations
+- lxml XPath Docs:
+  https://lxml.de/xpathxslt.html
+
+- parsel (used in Scrapy):
+  https://parsel.readthedocs.io/en/latest/
+
+✅ Testing and Debugging
+- XPath Tester:
+  https://xpather.com
+
+- DevTools Console (Chrome/Firefox):
+  Use $x("//div") to run XPath in the browser
+
+✅ Scrapy Selector System:
+- https://docs.scrapy.org/en/latest/topics/selectors.html
+
+✅ XPath 1.0 Spec:
+- https://www.w3.org/TR/1999/REC-xpath-19991116/
+
+✅ Practice Pages:
+- https://books.toscrape.com/
+- https://quotes.toscrape.com/
+"""

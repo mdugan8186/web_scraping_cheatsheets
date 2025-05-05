@@ -9,56 +9,64 @@
 # bot protection and scraping JavaScript-heavy or cloudflare-protected sites.
 # ==========================
 
-# region == What Is curl_cffi? ==
 """
-- curl_cffi is a Python wrapper around libcurl written in CFFI
-- Supports:
-  ✅ TLS fingerprint spoofing (JA3)
-  ✅ HTTP/2 and ALPN negotiation
-  ✅ Header impersonation for browsers (Chrome, Safari, Firefox)
-  ✅ Seamless proxy support
-  ✅ Built-in retry and timeout handling
+curl_cffi is a Python wrapper around libcurl using CFFI bindings.
+It allows you to make stealthy HTTP requests that mimic real browser behavior.
 
-- Best for scraping high-security websites that block `requests`, `httpx`, and Selenium.
+Key features:
+✅ TLS/JA3 fingerprint spoofing
+✅ HTTP/2 and ALPN negotiation
+✅ Browser impersonation (headers, order, priority)
+✅ Seamless proxy support
+✅ Built-in retry and timeout handling
+
+Best for:
+- Scraping Cloudflare-protected sites
+- Avoiding bot detection on high-security pages
+- Replacing unreliable headless browsers for API scraping
 """
-# endregion
 
-# region == Installation ==
+# --------------------------
+# Installation
+# --------------------------
+
 """
-# Requires a Rust toolchain (for building cffi extensions)
+# Requires Rust for CFFI build
 
-# macOS/Linux
 pip install curl-cffi --upgrade
-
-# Windows (requires curl prebuilt DLLs or WSL)
-
-For full browser impersonation:
-pip install curl-cffi[http2]
+pip install curl-cffi[http2]   # for full browser impersonation
 """
-# endregion
 
-# region == Basic GET Request ==
+# --------------------------
+# Basic GET Request
+# --------------------------
+
 
 from curl_cffi import requests
 r = requests.get("https://example.com")
 print(r.status_code)
 print(r.text)
-# endregion
 
-# region == Impersonating a Real Browser ==
+# --------------------------
+# Impersonating a Real Browser
+# --------------------------
+
 r = requests.get("https://example.com", impersonate="chrome110")
 print(r.request.headers["user-agent"])
+
 """
-Available browser impersonation options:
+Available impersonation values:
 - chrome110
 - chrome99
 - safari15_3
 - safari15_5
 - firefox102
 """
-# endregion
 
-# region == Passing Headers, Cookies, and Params ==
+# --------------------------
+# Sending Headers, Cookies, and Params
+# --------------------------
+
 headers = {"x-api-key": "my-key"}
 cookies = {"session": "abc123"}
 params = {"q": "shoes"}
@@ -71,11 +79,13 @@ r = requests.get(
     params=params
 )
 print(r.json())
-# endregion
 
-# region == Using Proxies ==
+# --------------------------
+# Using Proxies
+# --------------------------
+
 """
-Supports HTTP/SOCKS proxies in standard format:
+Supports:
 - http://user:pass@host:port
 - socks5h://user:pass@host:port
 """
@@ -83,11 +93,13 @@ Supports HTTP/SOCKS proxies in standard format:
 r = requests.get(
     "https://example.com",
     impersonate="chrome110",
-    proxies={"http": "http://user:pass@ip:port"}
+    proxies={"http": "http://user:pass@proxy_ip:port"}
 )
-# endregion
 
-# region == Handling POST Requests ==
+# --------------------------
+# POST Request
+# --------------------------
+
 payload = {"username": "admin", "password": "secret"}
 r = requests.post(
     "https://example.com/api/login",
@@ -95,52 +107,73 @@ r = requests.post(
     json=payload
 )
 print(r.status_code)
-# endregion
 
-# region == Timeout and Retry Control ==
+# --------------------------
+# Timeout and Retry Control
+# --------------------------
+
 r = requests.get(
     "https://example.com",
     impersonate="chrome110",
     timeout=10,
     max_retries=3
 )
-# endregion
 
-# region == Why Use curl_cffi Over requests/httpx? ==
-"""
-✅ Built-in browser-like TLS fingerprinting (JA3)
-✅ HTTP/2 support with realistic ALPN
-✅ Bypasses many bot protections (e.g. Cloudflare)
-✅ Better stealth than Selenium or Playwright for HTTP scraping
+# --------------------------
+# Why Use curl_cffi Instead of requests/httpx?
+# --------------------------
 
-⚠️ Cannot execute JavaScript (unlike a browser)
-⚠️ May need extra setup on Windows
 """
-# endregion
+✅ Full TLS fingerprint and JA3 spoofing
+✅ HTTP/2 and ALPN negotiation
+✅ Works against Cloudflare, Akamai, and other bot mitigations
+✅ Much stealthier than requests or httpx
 
-# region == Best Practices ==
+⚠️ Cannot run JavaScript
+⚠️ May require extra setup on Windows
 """
-✅ Always use impersonate= with a real browser string
+
+# --------------------------
+# Best Practices
+# --------------------------
+
+"""
+✅ Always use impersonate= with a realistic browser value
 ✅ Combine with rotating proxies and headers
-✅ Use curl_cffi for protected endpoints, not static HTML
-✅ Use DevTools to extract real headers and test in curl_cffi
-"""
-# endregion
+✅ Use curl_cffi for difficult endpoints behind bot protection
+✅ Extract real request headers from browser DevTools and reuse them
+✅ Use timeout and retry logic for stability
 
-# region == curl_cffi vs Other Tools ==
+⚠️ Avoid using curl_cffi to scrape raw HTML unless necessary
 """
-| Feature           | requests | httpx | curl_cffi | Selenium |
-|-------------------|----------|-------|-----------|----------|
-| TLS Fingerprint   | ❌       | ❌     | ✅        | ✅       |
-| HTTP/2 + ALPN     | ❌       | Partial| ✅        | ✅       |
-| JS Execution      | ❌       | ❌     | ❌        | ✅       |
-| Proxy Support     | ✅       | ✅     | ✅        | ✅       |
-| Headless Evasion  | ❌       | ❌     | ✅        | ⚠️ (detectable) |
-"""
-# endregion
 
-# region == Documentation ==
-# Official Docs: https://curl-cffi.readthedocs.io/en/latest/
-# GitHub: https://github.com/yifeikong/curl_cffi
-# Cloudflare Challenges: https://github.com/DaRealFreak/cloudflare-scrape-js2py
-# endregion
+# --------------------------
+# Feature Comparison (as comment block)
+# --------------------------
+
+"""
+Feature Comparison:
+
+| Feature          | requests | httpx  | curl_cffi | Selenium |
+|------------------|----------|--------|-----------|----------|
+| TLS Fingerprint  | ❌       | ❌     | ✅        | ✅       |
+| HTTP/2 + ALPN    | ❌       | Partial| ✅        | ✅       |
+| JS Execution     | ❌       | ❌     | ❌        | ✅       |
+| Proxy Support    | ✅       | ✅     | ✅        | ✅       |
+| Headless Evasion | ❌       | ❌     | ✅        | ⚠️ (partial) |
+"""
+
+# --------------------------
+# Documentation
+# --------------------------
+
+"""
+curl_cffi Docs:
+https://curl-cffi.readthedocs.io/en/latest/
+
+GitHub Repo:
+https://github.com/yifeikong/curl_cffi
+
+Cloudflare Challenge Help:
+https://github.com/DaRealFreak/cloudflare-scrape-js2py
+"""

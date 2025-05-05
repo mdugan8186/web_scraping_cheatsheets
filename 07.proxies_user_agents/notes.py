@@ -9,19 +9,20 @@
 # for `requests`, `Scrapy`, `Selenium`, and modern stealth tools.
 # ==========================
 
-# region == What Are Proxies and User-Agents? ==
 """
-- A proxy routes your request through a different IP address.
-- A User-Agent header identifies the client software (e.g., browser, device).
+A proxy routes your request through a different IP address.
+A User-Agent header identifies the client software (browser, OS, device).
 
-Using them is essential to:
+Together they help:
 - Avoid IP bans and rate limiting
 - Mimic real browser traffic
 - Rotate identities across scraping jobs
 """
-# endregion
 
-# region == Proxy Formats ==
+# --------------------------
+# Proxy Formats
+# --------------------------
+
 """
 HTTP Proxy:
     http://USERNAME:PASSWORD@PROXY_IP:PORT
@@ -31,31 +32,32 @@ Free Proxy (no auth):
     http://123.45.67.89:8080
 """
 
-# Example dictionary format (used in requests/httpx):
 from curl_cffi import requests as stealth_requests
 from selenium.webdriver.chrome.options import Options
 from selenium import webdriver
 import random
 import requests
-
-
 proxies = {
     "http": "http://USERNAME:PASSWORD@PROXY_IP:PORT",
     "https": "http://USERNAME:PASSWORD@PROXY_IP:PORT"
 }
-# endregion
 
-# region == requests: Using Proxies and User-Agent ==
+# --------------------------
+# requests: Using Proxies and User-Agent
+# --------------------------
+
 
 headers = {
     "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64)"
 }
+
 response = requests.get("https://example.com",
                         headers=headers, proxies=proxies)
 print(response.status_code)
-# endregion
 
-# region == requests: Rotating User-Agent from a List ==
+# --------------------------
+# requests: Rotating User-Agent from a List
+# --------------------------
 
 user_agents = [
     "Mozilla/5.0 (Windows NT 10.0; Win64; x64)",
@@ -65,10 +67,13 @@ user_agents = [
 
 headers = {"User-Agent": random.choice(user_agents)}
 response = requests.get("https://example.com", headers=headers)
-# endregion
 
-# region == Scrapy: Rotate Proxies and User-Agents ==
-# In settings.py:
+# --------------------------
+# Scrapy: Rotate Proxies and User-Agents
+# --------------------------
+
+"""
+In settings.py:
 
 USER_AGENTS = [
     "Mozilla/5.0 (Windows NT 10.0)",
@@ -85,11 +90,12 @@ ROTATING_PROXY_LIST = [
     "http://USERNAME:PASSWORD@proxy1.com:8000",
     "http://USERNAME:PASSWORD@proxy2.com:8000",
 ]
+"""
 
-# Or use scrapy-rotating-proxies or scrapy-proxies extensions.
-# endregion
+# --------------------------
+# Selenium: Set User-Agent and Proxy
+# --------------------------
 
-# region == Selenium: Set User-Agent and Proxy ==
 
 options = Options()
 options.add_argument("--user-agent=Mozilla/5.0 (Windows NT 10.0)")
@@ -97,55 +103,89 @@ options.add_argument("--proxy-server=http://PROXY_IP:PORT")
 
 driver = webdriver.Chrome(options=options)
 driver.get("https://example.com")
-# endregion
 
-# region == curl_cffi: Built-in Browser Fingerprint Spoofing ==
+# --------------------------
+# curl_cffi: Built-in Browser Fingerprint Spoofing
+# --------------------------
+
 
 response = stealth_requests.get("https://example.com", impersonate="chrome110")
 print(response.request.headers["user-agent"])
-# Automatically handles fingerprint, TLS, and headers
-# endregion
 
-# region == Using Public Proxy APIs (Free/Rotating) ==
-# Warning: public/free proxies are slow and often blocked
-# Paid services include BrightData, ScraperAPI, Webshare.io, Zyte, and Oxylabs
-
-# Sample (unreliable) free proxy list:
-# https://free-proxy-list.net/
-# https://proxylist.geonode.com/
-# https://proxyscrape.com/
-# endregion
-
-# region == Best Practices ==
 """
-✅ Rotate User-Agents and IPs together
-✅ Use residential proxies or headless browsers for protected sites
-✅ Retry failed proxies, blacklist dead ones
-✅ Use separate sessions per proxy to isolate cookies
-✅ Mimic real browsers (headers, TLS, Accept-Language)
-
-⚠️ Avoid free proxies for commercial scraping
-⚠️ Don't reuse IP + UA pairs in tight loops
-⚠️ Avoid bot patterns (no JS, predictable intervals, etc.)
+curl_cffi automatically handles:
+- TLS fingerprint spoofing (JA3)
+- Accept-Language and other realistic headers
+- Browser impersonation (Chrome, Safari, Firefox, etc.)
 """
-# endregion
 
-# region == Detection Tactics to Watch For ==
+# --------------------------
+# Using Public Proxy APIs (Free/Rotating)
+# --------------------------
+
 """
-- IP-based rate limits or bans
-- Missing or inconsistent Accept/Referer headers
-- Identical headers across requests
-- Headless browser detection (Selenium, Playwright)
-- JA3/TLS fingerprinting mismatches
-- Session mismatch between requests
+⚠️ Warning: public proxies are often slow, unreliable, or blocked
 
-Use https://httpbin.org/headers or https://www.whatismybrowser.com/ to inspect your fingerprint.
+Free proxy lists:
+- https://free-proxy-list.net/
+- https://proxyscrape.com/
+- https://proxylist.geonode.com/
+
+Paid proxy providers:
+- BrightData
+- Webshare.io
+- ScraperAPI
+- Zyte
+- Oxylabs
 """
-# endregion
 
-# region == Documentation ==
-# MDN User-Agent Header: https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/User-Agent
-# requests Proxies: https://docs.python-requests.org/en/latest/user/advanced/#proxies
-# scrapy Proxies: https://docs.scrapy.org/en/latest/topics/downloader-middleware.html#http-proxy
-# curl_cffi Docs: https://curl-cffi.readthedocs.io/en/latest/
-# endregion
+# --------------------------
+# Best Practices
+# --------------------------
+
+"""
+✅ Rotate User-Agent + IP together
+✅ Use session or cookie isolation per proxy
+✅ Retry or blacklist failing proxies automatically
+✅ Mimic real browsers (headers, Accept-Language, TLS)
+✅ Randomize delays between requests
+
+⚠️ Avoid free proxies for commercial use
+⚠️ Don’t reuse the same IP + User-Agent combo in a tight loop
+⚠️ Don’t ignore JavaScript-based bot detection (use stealth tools)
+"""
+
+# --------------------------
+# Detection Tactics to Watch For
+# --------------------------
+
+"""
+Sites may detect you if:
+- Requests come too quickly from same IP
+- User-Agent doesn't match TLS fingerprint
+- Headless browsers are detected (e.g., Selenium)
+- Cookies or sessions are inconsistent
+- Headers are missing or too uniform
+
+Use these tools to inspect your footprint:
+- https://httpbin.org/headers
+- https://www.whatismybrowser.com/
+"""
+
+# --------------------------
+# Documentation
+# --------------------------
+
+"""
+MDN - User-Agent:
+https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/User-Agent
+
+requests - Proxies:
+https://docs.python-requests.org/en/latest/user/advanced/#proxies
+
+Scrapy Proxy Middleware:
+https://docs.scrapy.org/en/latest/topics/downloader-middleware.html#http-proxy
+
+curl_cffi:
+https://curl-cffi.readthedocs.io/en/latest/
+"""

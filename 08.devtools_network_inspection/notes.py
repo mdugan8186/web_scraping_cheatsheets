@@ -8,71 +8,71 @@
 # avoid parsing complex HTML, and reverse-engineer JavaScript-heavy websites for scraping.
 # ==========================
 
-# region == Why Use DevTools Network Tab? ==
 """
-- Many modern websites use JavaScript to fetch data from backend APIs.
-- These API calls often return structured JSON data that’s easier to scrape than HTML.
-- Inspecting network requests helps avoid:
-    - Anti-scraping markup obfuscation
-    - Useless rendering elements
-    - Complex parsing logic
+Modern websites often load data via JavaScript-powered API calls (XHR, Fetch).
+Inspecting these in DevTools can reveal structured JSON data that's easier to scrape
+than parsing raw HTML.
 
-You can:
-✅ Find direct API endpoints
-✅ Copy headers/cookies for authentication
-✅ Mimic requests in code
+Benefits:
+✅ Find clean backend API endpoints
+✅ Avoid JavaScript-rendered DOM parsing
+✅ Copy real headers/cookies/tokens for authenticated requests
 """
-# endregion
 
-# region == How to Open DevTools Network Panel ==
+# --------------------------
+# How to Open DevTools Network Panel
+# --------------------------
+
 """
-1. Open the target website in Chrome or Firefox.
-2. Right-click anywhere → "Inspect"
-3. Go to the **Network** tab
-4. Reload the page (F5 or ⌘R / Ctrl+R)
+1. Open the target site in Chrome or Firefox.
+2. Right-click → Inspect (or press F12)
+3. Go to the **Network** tab.
+4. Reload the page (F5 / Ctrl+R / Cmd+R)
 
-You’ll now see all network traffic made by the page — including:
-- HTML, CSS, JS
-- Images
-- AJAX/Fetch/XHR requests (usually contain API data)
+You’ll now see traffic like:
+- HTML / JS / CSS
+- Images and Fonts
+- XHR / Fetch (API calls)
 """
-# endregion
 
-# region == Filtering for API and Data Requests ==
+# --------------------------
+# Filtering for API and Data Requests
+# --------------------------
+
 """
-Use the following filters in the Network tab:
-- XHR → XML HTTP Requests (JSON, REST APIs)
-- Fetch → Newer APIs (same purpose)
-- Doc → Main page HTML
-- JS → JavaScript files
+Use filters in the Network tab:
 
-You can also type filters like:
-- `api`
-- `.json`
-- `search`
-- `products`
+- XHR → XMLHttpRequests (most API calls)
+- Fetch → JS fetch requests
+- `api`, `.json`, `search`, `product` → manual filters
 
-Click a request → look in **Preview** and **Response** tabs to see data.
+Click a request → check:
+- **Preview** tab (formatted)
+- **Response** tab (raw content)
 """
-# endregion
 
-# region == Steps to Recreate API Calls ==
+# --------------------------
+# Steps to Recreate an API Call
+# --------------------------
+
 """
-1. Identify the request (XHR or Fetch) that returns the data you want.
-2. Click it, then go to the **Headers** tab.
+1. Identify an XHR or Fetch request that returns JSON data.
+2. Click the request → go to **Headers**.
 3. Copy:
-    - Request URL
-    - Request Method (GET/POST)
-    - Query Parameters or JSON payload
-    - Request Headers (especially User-Agent, Accept, Referer)
-    - Cookies (if present)
-4. Try the URL in your browser to verify it works.
+   - Request URL
+   - Method (GET, POST)
+   - Query string or POST data
+   - Headers (User-Agent, Accept, Referer, etc.)
+   - Cookies (if present)
+4. Test URL directly in your browser or Postman.
 
-✅ You can now recreate this request in Python using `requests` or `httpx`.
+Once confirmed, rebuild it in code using `requests` or `httpx`.
 """
-# endregion
 
-# region == Example: Rebuilding an API Call with requests ==
+# --------------------------
+# Example: Rebuilding an API Call with requests
+# --------------------------
+
 
 import requests
 headers = {
@@ -80,75 +80,102 @@ headers = {
     "Accept": "application/json",
     "Referer": "https://example.com"
 }
+
 params = {"q": "shoes", "limit": 10}
 response = requests.get("https://example.com/api/search",
                         headers=headers, params=params)
 print(response.json())
-# endregion
 
-# region == Copying as cURL and Converting to Python ==
-"""
-1. In DevTools → Right-click any request → "Copy" → "Copy as cURL"
-2. Paste it into https://curlconverter.com/ to auto-convert it to Python `requests`
+# --------------------------
+# Copy as cURL → Convert to Python
+# --------------------------
 
-This copies:
-- All headers
-- URL
-- Cookies
-- Payload (for POST/PUT)
 """
-# endregion
+1. Right-click request → Copy → "Copy as cURL"
+2. Go to https://curlconverter.com/
+3. Paste the cURL to auto-convert to Python `requests` code
 
-# region == How to Extract Auth Headers or Tokens ==
+It preserves:
+✅ URL
+✅ Headers
+✅ Cookies
+✅ POST data (for login, filters, etc.)
 """
-Sites that require login or have protected APIs often send:
+
+# --------------------------
+# Extracting Auth Headers or Tokens
+# --------------------------
+
+"""
+APIs often require:
+
 - Authorization: Bearer <token>
 - X-CSRF-Token
-- Cookie headers with session ID
+- Set-Cookie headers
 
 Steps:
-1. Log in manually in your browser
-2. Inspect an API request made after login
-3. Copy the needed headers into your scraper code
+1. Login manually
+2. Trigger an action in the site (search, dashboard, etc.)
+3. Look for those headers in related API calls
+4. Copy and reuse them in your scraper
 """
-# endregion
 
-# region == Advanced: Watching Live Requests While Interacting ==
-"""
-- Click buttons, dropdowns, or paginate through results
-- Look for new API calls being triggered
-- These requests often contain:
-    - JSON product data
-    - Dynamic filters (category, color, rating)
-    - Pagination query params
+# --------------------------
+# Watching API Calls Live While Interacting
+# --------------------------
 
-Tip: Sort by "Time" or "Initiator" to locate user-triggered requests.
 """
-# endregion
+While DevTools is open:
 
-# region == Tools to Help With DevTools Inspection ==
-"""
-- JSON Viewer (browser extension): Formats ugly API output
-- curlconverter.com: Converts cURL to requests/python
-- DevTools → Copy → "Copy as fetch" (for Playwright/Selenium mimicry)
-"""
-# endregion
+- Click buttons, filters, tabs, paginate, etc.
+- Observe triggered XHR/Fetch calls
+- Preview tab shows JSON for products, metadata, etc.
 
-# region == Best Practices ==
+Tips:
+- Sort by Time or Initiator to see what your action triggered
+- Look at query params (e.g., page=2, category=shoes)
 """
-✅ Use DevTools to inspect API before writing any scraper code
-✅ Scrape JSON, not HTML, whenever possible
-✅ Use exact headers/cookies seen in browser
-✅ Watch requests triggered by JavaScript or user interaction
 
-⚠️ Don't assume URL is stable — inspect params for dynamic keys/tokens
-⚠️ Some APIs have rate limits or require login/session to work
-⚠️ Avoid headless scraping if a clean API exists
+# --------------------------
+# Tools to Help With DevTools Inspection
+# --------------------------
+
 """
-# endregion
+- JSON Viewer (browser extension): formats JSON in Preview/Response tabs
+- https://curlconverter.com: convert browser cURL into working Python code
+- Copy → "Copy as fetch" (for Playwright-style automation)
 
-# region == Documentation ==
-# MDN DevTools Network Monitor: https://developer.mozilla.org/en-US/docs/Tools/Network_Monitor
-# curlconverter.com: https://curlconverter.com/
-# Scrapy XHR Tutorial: https://docs.scrapy.org/en/latest/topics/practices.html#using-browser-devtools
-# endregion
+Other Tools:
+- Postman / Hoppscotch (API testing)
+- Request Inspector: https://webhook.site or https://requestbin.com
+"""
+
+# --------------------------
+# Best Practices
+# --------------------------
+
+"""
+✅ Use DevTools to reverse-engineer clean JSON APIs
+✅ Rebuild only working requests — avoid parsing rendered HTML
+✅ Match headers/cookies as closely as possible
+✅ Observe request order and dependencies (login → dashboard, etc.)
+
+⚠️ Don't assume all API endpoints are stable — session tokens may expire
+⚠️ Some endpoints are protected with CSRF or token verification
+⚠️ Avoid scraping if a public/open API is already available
+"""
+
+# --------------------------
+# Documentation
+# --------------------------
+
+"""
+MDN - DevTools Network Monitor:
+https://developer.mozilla.org/en-US/docs/Tools/Network_Monitor
+
+curlconverter (cURL to Python):
+https://curlconverter.com/
+
+Scrapy - XHR scraping:
+https://docs.scrapy.org/en/latest/topics/practices.html#using-browser-devtools
+"""
